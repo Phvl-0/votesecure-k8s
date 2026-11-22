@@ -1,0 +1,54 @@
+name: Kubernetes scan
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  checkov:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install Helm (pinned, checksum verified)
+        run: |
+          curl -fsSLO https://get.helm.sh/helm-v4.3.1-linux-amd64.tar.gz
+          echo "0403a88ae20913d11b10a2467b50087721fea7581736da6b9d3992f5357fe54b  helm-v4.3.1-linux-amd64.tar.gz" | sha256sum -c -
+          tar -xzf helm-v4.3.1-linux-amd64.tar.gz
+          sudo install -o root -g root -m 0755 linux-amd64/helm /usr/local/bin/helm
+          helm version
+
+      - name: Install Checkov (pinned)
+        run: |
+          python3 -m venv /tmp/venv
+          /tmp/venv/bin/pip install checkov==3.4.3
+
+      - name: Render the chart with the real namespace
+        run: helm template votesecure helm/votesecure --namespace votesecure > /tmp/votesecure-rendered.yaml
+
+      - name: Scan the rendered manifests
+        run: |
+          # Accepted with a written reason
+          SKIP="CKV_K8S_43"           # image digest: api and web use a full commit SHA tag; postgres uses a tag, stated as a limit
+          SKIP="$SKIP,CKV_K8S_15"     # pull policy Always: a forced pull on every start could fail when the pull token expires
+          SKIP="$SKIP,CKV_K8S_35"     # secrets as files: the apps read env variables; changing that is an app change, not C2
+          # Deferred to C3 (cluster security). Remove each line when C3 fixes it
+          SKIP="$SKIP,CKV_K8S_37"     # postgres: capabilities, needs a securityContext
+          SKIP="$SKIP,CKV_K8S_30"     # postgres: container securityContext
+          SKIP="$SKIP,CKV_K8S_28"     # postgres: NET_RAW capability
+          SKIP="$SKIP,CKV_K8S_23"     # postgres: root container
+          SKIP="$SKIP,CKV_K8S_20"     # postgres: allowPrivilegeEscalation
+          SKIP="$SKIP,CKV_K8S_29"     # pod-level securityContext
+          SKIP="$SKIP,CKV_K8S_31"     # seccomp profile
+          SKIP="$SKIP,CKV_K8S_38"     # service account token mounting
+          SKIP="$SKIP,CKV_K8S_22"     # read-only root filesystem
+          SKIP="$SKIP,CKV_K8S_40"     # high UID (web runs as 101, postgres sets none)
+          SKIP="$SKIP,CKV2_K8S_6"     # NetworkPolicy, built in C3
+          /tmp/venv/bin/checkov -f /tmp/votesecure-rendered.yaml --framework kubernetes --skip-check "$SKIP" --compact --quiet
