@@ -55,6 +55,13 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /var/lib/postgresql/data
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 70
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
       volumes:
         - name: data
           persistentVolumeClaim:
