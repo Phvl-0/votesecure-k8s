@@ -13,6 +13,10 @@ spec:
       labels:
         app: web
     spec:
+      automountServiceAccountToken: false
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       imagePullSecrets:
         - name: ghcr-pull
       containers:
