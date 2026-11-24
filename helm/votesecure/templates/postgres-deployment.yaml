@@ -59,10 +59,13 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /var/lib/postgresql/data
+            - name: run
+              mountPath: /var/run/postgresql
           securityContext:
             runAsNonRoot: true
             runAsUser: 70
             allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
             capabilities:
               drop:
                 - ALL
@@ -70,3 +73,5 @@ spec:
         - name: data
           persistentVolumeClaim:
             claimName: postgres-data
+        - name: run
+          emptyDir: {}
