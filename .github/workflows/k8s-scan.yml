@@ -40,6 +40,4 @@ jobs:
           SKIP="$SKIP,CKV_K8S_15"     # pull policy Always: a forced pull on every start could fail when the pull token expires
           SKIP="$SKIP,CKV_K8S_35"     # secrets as files: the apps read env variables; changing that is an app change, not C2
           SKIP="$SKIP,CKV_K8S_40"     # high UID: accepted. postgres must run as 70 (owner of its data folder) and web as 101 (nginx image user)
-          # Deferred to C3 (cluster security). Remove each line when C3 fixes it
-          SKIP="$SKIP,CKV2_K8S_6"     # NetworkPolicy, built in C3
           /tmp/venv/bin/checkov -f /tmp/votesecure-rendered.yaml --framework kubernetes --skip-check "$SKIP" --compact --quiet
