@@ -4,7 +4,9 @@ metadata:
   name: api
   namespace: {{ .Release.Namespace }}
 spec:
+  {{- if not .Values.api.autoscaling.enabled }}
   replicas: {{ .Values.api.replicas }}
+  {{- end }}
   selector:
     matchLabels:
       app: api
