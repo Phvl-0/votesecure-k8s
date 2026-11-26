@@ -1,0 +1,14 @@
+# Applied by hand with kubectl (nothing in the cluster applies this folder).
+# Read-only deploy key, kept in the cluster Secret flux-repo-key (made with kubectl, never in Git).
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: votesecure-k8s
+  namespace: flux-system
+spec:
+  interval: 2m
+  url: ssh://git@github.com/Phvl-0/votesecure-k8s
+  ref:
+    branch: main
+  secretRef:
+    name: flux-repo-key

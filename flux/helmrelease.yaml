@@ -1,0 +1,24 @@
+# Applied by hand with kubectl (nothing in the cluster applies this folder).
+# WARNING: deleting this HelmRelease makes helm-controller run helm uninstall (Flux default),
+# which would remove the app and the postgres PVC. Record the data first.
+# reconcileStrategy Revision: the default (ChartVersion) ignores template changes if Chart.yaml is unchanged.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: votesecure
+  namespace: flux-system
+spec:
+  interval: 2m
+  timeout: 5m
+  releaseName: votesecure
+  targetNamespace: votesecure
+  storageNamespace: votesecure
+  driftDetection:
+    mode: enabled
+  chart:
+    spec:
+      chart: ./helm/votesecure
+      reconcileStrategy: Revision
+      sourceRef:
+        kind: GitRepository
+        name: votesecure-k8s
