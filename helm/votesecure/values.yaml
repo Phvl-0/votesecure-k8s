@@ -1,4 +1,4 @@
-imageTag: drill-nonexistent-tag
+imageTag: e77d14ace3ef1aef8f68108ca8bbe9a7a8d0b602
 
 web:
   repository: ghcr.io/phvl-0/votesecure-fullstack-web
