@@ -9,18 +9,25 @@ The app source and the image builds are in another repo: Phvl-0/votesecure-fulls
 
 ## What runs
 
-    GitHub repo (main is protected) <--- pull request + Checkov check
-            |
-            |  read-only deploy key, polled every 2 minutes
-            v
-    namespace flux-system:  source-controller --> helm-controller
-                                                       |  helm upgrade (release "votesecure")
-                                                       v
-    namespace votesecure (Pod Security: restricted)
-      ingress-nginx --> web (nginx, 8080) --> api (FastAPI, 8000, 1 to 3 pods) --> postgres (5432, volume 1Gi)
+```mermaid
+flowchart LR
+  subgraph gh["GitHub"]
+    pr["pull request"] --> chk["Checkov check in CI"] --> main["main branch, protected"]
+  end
+  subgraph fx["namespace flux-system"]
+    src["source-controller"] --> hc["helm-controller"]
+  end
+  main -->|"fetched every 2 min, read-only deploy key"| src
+  subgraph ns["namespace votesecure, Pod Security restricted"]
+    web["web: nginx, 8080"] --> api["api: FastAPI, 8000, 1 to 3 pods"] --> pg["postgres: 5432"] --> vol[("volume 1Gi")]
+    hpa["HPA: 50% CPU of the 100m request"] -.->|"sets replicas"| api
+  end
+  hc -->|"helm upgrade, release votesecure"| ns
+  user["browser via port-forward 8091"] --> ing["ingress-nginx, own namespace"] --> web
+  ms["metrics-server, kube-system"] -.->|"CPU of the api pods"| hpa
+```
 
-    NetworkPolicies (ingress only): web accepts only the ingress controller, api only web, postgres only api.
-    kube-system: metrics-server feeds the autoscaler (HPA) on the api.
+NetworkPolicies (ingress only): web accepts only the ingress controller, api only web, postgres only api.
 
 | Part | What it is |
 |---|---|
